@@ -2,51 +2,72 @@
 import csv, os
 import pandas
 import pronouncing
+from pygam import LogisticGAM, s, f, te
 path_to_data = "./data/"
 listed_files = os.listdir(path_to_data)
+vowels = {
+        'AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW'
+    }
 def find_first_vowel(phonemes):
-    for phoneme in phonemes:
-        if phoneme[0:2]:
+    for phoneme in phonemes.split():
+        if phoneme[0:2] in vowels:
             return phoneme
     return "NAME ERROR"
 def annotate_name(name):
-    vowels = {
-        'AA', 'AE', 'AH', 'AO', 'AW', 'AY', 'EH', 'ER', 'EY', 'IH', 'IY', 'OW', 'OY', 'UH', 'UW'
-    }
     phonemes = None
     cmu_phonemes = pronouncing.phones_for_word(name)
     # TODO: add cmu failback
     phonemes = cmu_phonemes
     if not phonemes:
         return "NAME ERROR"
-    stress = pronouncing.stresses(phonemes)[1]
+    phonemes = cmu_phonemes[0]
+    stress = int(pronouncing.stresses(phonemes)[0])
     num_syllables = pronouncing.syllable_count(phonemes)
-    final_sound = "V" if phonemes[len(phonemes)-1][0:2] in vowels else "C"
+    final_sound = "V" if phonemes.split()[len(phonemes.split())-1][0:2] in vowels else "C"
     first_vowel = find_first_vowel(phonemes)
     if first_vowel == "NAME ERROR":
         return "NAME ERROR"
-    return {"stress": stress, "syll_count": num_syllables, "final_sound": final_sound, "inital_vowel": first_vowel }
-    
-
+    return {"stress": stress, "syll_count": num_syllables, "final_sound": final_sound, "initial_vowel": first_vowel }
 
 data_frame = pandas.DataFrame(columns=["spelling"
-                                       ,"gender"
+                                       ,"sex"
                                        , "count", 
                                        "decade", 
                                        "stress", 
                                        "syll_count", 
-                                       "final_phoneme", 
-                                       "inital_vowel"])
+                                       "final_sound", 
+                                       "initial_vowel"])
 for file in listed_files:
-    with open(path_to_data + file) as f:
-        for line in f:
+    with open(path_to_data + file) as fi:
+        for line in fi:
+            line = line.split(",")
+            annotations = annotate_name(line[0])
+            if annotations == "NAME ERROR":
+                continue
             data_frame.loc[len(data_frame)] = {
                 "spelling": line[0],
-                "gender": line[1],
+                "sex": 1 if line[1] == "F" else 0,
                 "count": line[2],
                 "decade": int(file[3:6]+"0"),
-                "stress": "1",
-                "syll_count": 1,
-                "final_phoneme": "n",
-                "inital_vowel": True
+                "stress": annotations["stress"],
+                "syll_count": annotations["syll_count"],
+                "final_sound": annotations["final_sound"],
+                "initial_vowel": annotations["initial_vowel"] 
             }
+
+'''using the dependent variable of sex,
+    and the independent variables of stress (reference level = Primary),
+    final phoneme (reference = C), initial
+    vowel (reference = [æ]),
+    and number of syllables (treated categorically; reference = 1),
+    plus decade as a non-parametric smooth term, interacted with syllable count'''
+    
+    
+for col in ["stress", "syll_count", "final_sound", "initial_vowel"]:
+    data_frame[col] = data_frame[col].astype("category").cat.codes
+terms = ( s(0) + f(1) + f(2) + f(3) + f(4) + te(0, 2))
+X = data_frame[["decade", "stress", "syll_count", "final_sound", "initial_vowel"]]
+Y = data_frame["sex"]
+
+gam = LogisticGAM(terms=terms).fit(X, Y)
+print(gam.summary())
