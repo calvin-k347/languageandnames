@@ -1,5 +1,5 @@
 # remaking the GAM from 'Modeling Language Change in English First Names'
-import csv, os
+import pickle, os
 import pandas
 import pronouncing
 from pygam import LogisticGAM, s, f, te
@@ -39,6 +39,8 @@ data_frame = pandas.DataFrame(columns=["spelling"
                                        "initial_vowel"])
 for file in listed_files:
     with open(path_to_data + file) as fi:
+        if file[6] != "0":
+            continue
         for line in fi:
             line = line.split(",")
             annotations = annotate_name(line[0])
@@ -47,7 +49,7 @@ for file in listed_files:
             data_frame.loc[len(data_frame)] = {
                 "spelling": line[0],
                 "sex": 1 if line[1] == "F" else 0,
-                "count": line[2],
+                "count": line[2][:-1],
                 "decade": int(file[3:6]+"0"),
                 "stress": annotations["stress"],
                 "syll_count": annotations["syll_count"],
@@ -62,7 +64,6 @@ for file in listed_files:
     and number of syllables (treated categorically; reference = 1),
     plus decade as a non-parametric smooth term, interacted with syllable count'''
     
-    
 for col in ["stress", "syll_count", "final_sound", "initial_vowel"]:
     data_frame[col] = data_frame[col].astype("category").cat.codes
 terms = ( s(0) + f(1) + f(2) + f(3) + f(4) + te(0, 2))
@@ -71,3 +72,5 @@ Y = data_frame["sex"]
 
 gam = LogisticGAM(terms=terms).fit(X, Y)
 print(gam.summary())
+with open('gam.pkl', 'wb') as f:
+    pickle.dump(gam, f)
