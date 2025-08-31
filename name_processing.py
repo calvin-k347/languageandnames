@@ -21,4 +21,17 @@ def annotate_name(name):
     first_vowel = find_first_vowel(phonemes)
     if first_vowel == "NAME ERROR":
         return "NAME ERROR"
-    return {"stress": stress, "syll_count": num_syllables, "ends_in_vowel": ends_in_vowel, "initial_vowel": first_vowel }
+    return {"stress": stress, "syll_count": num_syllables, "ends_in_vowel": ends_in_vowel, "initial_vowel": first_vowel, "pronouncation": phonemes}
+
+''' Using a dataset of 1667 names common in Britain in the 1980s, Cutler et
+al. found that female names are longer, more likely to end in a vowel or sonorant consonant, less
+likely to have initial primary stress, and more likely to contain the vowel [i]. We test whether a
+subset of these results extend to names popular in the United States, and we expect the outcomes
+of the current study to align with Cutler et al.’s (1990) findings. '''
+def characterize_name(name_obj):
+    return {
+        "longer": name_obj["syll_count"] > 2,
+        "ends_in_vowel": bool(name_obj["ends_in_vowel"]),
+        "initial_primary_stress": name_obj["stress"] == 1,
+        "contains_i": "IY" in name_obj["pronouncation"]
+    }
