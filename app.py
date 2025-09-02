@@ -4,6 +4,7 @@ import pickle
 import pandas
 from name_processing import annotate_name, characterize_name
 app = Flask(__name__)
+CORS(app)
 with open("gam.pkl", "rb") as f:
     loaded_gam = pickle.load(f)
 @app.route("/<name>")
@@ -19,6 +20,7 @@ def home(name):
                 "initial_vowel": [annotations["initial_vowel"]]})
         predictions.append(loaded_gam.predict_proba(new_data)[0])
     name_stats = {
+        "spelling": name,
         "model_predictions": predictions,
         "name_characterization": characterize_name(annotations),
     }
