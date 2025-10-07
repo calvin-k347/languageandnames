@@ -28,6 +28,7 @@ al. found that female names are longer, more likely to end in a vowel or sonoran
 likely to have initial primary stress, and more likely to contain the vowel [i]. We test whether a
 subset of these results extend to names popular in the United States, and we expect the outcomes
 of the current study to align with Cutler et al.’s (1990) findings. '''
+
 def characterize_name(name_obj):
     return {
         "longer": name_obj["syll_count"] > 2,

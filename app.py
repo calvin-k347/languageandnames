@@ -20,7 +20,7 @@ def home(name):
                 "initial_vowel": [annotations["initial_vowel"]]})
         predictions.append(loaded_gam.predict_proba(new_data)[0])
     name_stats = {
-        "spelling": name,
+        "name": [name, annotate_name(name)['pronouncation']],
         "model_predictions": predictions,
         "name_characterization": characterize_name(annotations),
     }
