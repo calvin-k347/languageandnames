@@ -26,4 +26,4 @@ def home(name):
     }
     return jsonify(name_stats)
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
